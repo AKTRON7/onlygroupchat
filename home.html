@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>home-page</title>
+    <link rel="stylesheet" href="home.css">
+</head>
+    <body>
+        <div class='header'>
+            <div class="userid">current user : <span id="semail">NONE</span></div>
+            <a href='grpinfo.html'>group information</a>
+            <input type="button" value="logout" onclick="logoutid()">
+        </div>
+
+        <div class="main"></div>
+
+        <div class='footer'>
+            <input type="text" id="chatbox" placeholder="Enter Your Message">
+            <input type="button" value="send" onclick="sendMsg()">
+        </div>
+
+            <!-- The core Firebase JS SDK is always required and must be listed first -->
+            <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-app.js"></script>
+
+            <!-- authentication -->
+            <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-auth.js"></script>
+
+            <!-- database -->
+            <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-database.js"></script>
+
+            <!-- TODO: Add SDKs for Firebase products that you want to use
+        https://firebase.google.com/docs/web/setup#available-libraries -->
+            <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-analytics.js"></script>
+
+            <script>
+                // Your web app's Firebase configuration
+                var firebaseConfig = {
+                    apiKey: "AIzaSyCKwraLR1xVxk-jZ_xCAkM40EBL9rh8_W8",
+                    authDomain: "webchat-5c2e5.firebaseapp.com",
+                    databaseURL: "https://webchat-5c2e5.firebaseio.com",
+                    projectId: "webchat-5c2e5",
+                    storageBucket: "webchat-5c2e5.appspot.com",
+                    messagingSenderId: "101471750360",
+                    appId: "1:101471750360:web:511c2a47ba0e5c39192fad",
+                    measurementId: "G-24PBXL0KXQ"
+                };
+                // Initialize Firebase
+                firebase.initializeApp(firebaseConfig);
+                firebase.analytics();
+            </script>
+
+            <!-- for firebase authetication check -->
+            <script>
+
+                //id printing in top
+                firebase.auth().onAuthStateChanged(function (user) {
+                    if (user) {
+                        // User is signed in.
+                        let email = user.email;
+                        document.querySelector('#semail').innerHTML = email;
+
+                        //reading all messages
+                        readMessages();
+                    } else {
+                        // No user is signed in.
+                        location.href = "index.html";
+                        document.querySelector('#semail').innerHTML = "NONE";
+                    }
+                });
+                
+                //reading messages
+                function readMessages() {
+                    var userId = firebase.auth().currentUser.uid;
+                    firebase.database().ref('/meassage/').on('child_added', function (data) {
+                        //taking data from DB for verifying id
+                        let x = data.val();
+                        //checking ids for showing owners message
+                        if (userId == x.uid) {
+                            addDATA(x.uid, x.msg, true);
+                        }
+                        else {
+                            addDATA(x.uid, x.msg, false);
+                        }
+                    });
+                }
+
+                function addDATA(id, msg, sender) {
+                    let xyz1 = `<div class="container">
+                                    <div class="rec"  style="visibility: hidden">
+                                        <div>ID: <span id="rec-id">123</span></div>
+                                        <p id="rec-msg">hello</p>
+                                    </div>
+                                    <div class="send">
+                                        <div>ID: <span id="send-id">${id.substr(0, 4)}</span></div>
+                                        <p id="send-msg">${msg}</p>
+                                    </div>
+                                </div>`
+                    let xyz2 = `<div class="container">
+                                    <div class="rec">
+                                        <div>ID: <span id="rec-id">${id.substr(0, 4)}</span></div>
+                                        <p id="rec-msg">${msg}</p>
+                                    </div>
+                                    <div class="send"  style="visibility: hidden">
+                                        <div>ID: <span id="send-id">456</span></div>
+                                        <p id="send-msg">bey</p>
+                                    </div>
+                                </div>`
+                        if (sender) {
+                            document.querySelector('.main').insertAdjacentHTML("beforeend", xyz1);
+                        }
+                        else {
+                            document.querySelector('.main').insertAdjacentHTML("beforeend", xyz2);
+                        }
+                    }
+
+                // for log out button
+                function logoutid() {
+                    firebase.auth().signOut().then(function (success) {
+                        alert('logged out successfully');
+                    }).catch(function (error) {
+                        // Handle Errors here.
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+                        alert('error : ' + error.message);
+                    });
+                }
+
+                // for sending message on clicking send button
+                function sendMsg() {
+                    // firebase db calling
+                    let database = firebase.database();
+
+                    //calling root node and adding a node with distinct string id
+                    let msgRef = database.ref("meassage/").push();
+
+                    //reading msg from field
+                    let msg = document.querySelector("#chatbox").value;
+
+                    //taking current userid
+                    let uid = firebase.auth().currentUser.uid;
+
+                    //setting uid and msg at a location 'message' in root node
+                    msgRef.set({
+                        uid: uid,
+                        msg: msg
+                    }).catch(function (error) {
+                        alert("error : " + error.message);
+                    });
+                }
+            </script>
+    </body>
+</html>
